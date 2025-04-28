@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: k6test-template
+  labels:
+    workflows.argoproj.io/archive-strategy: "false"
+  annotations:
+    workflows.argoproj.io/description: |
+      This is a K6 Test
+spec:
+  # garbage collection strategy for completed pods
+  podGC: 
+    strategy: OnWorkflowCompletion
+  ttlStrategy:
+    secondsAfterCompletion: 0 
+    secondsAfterSuccess: 0     
+    secondsAfterFailure: 600    
+  #even if the pods are deleted, the logs are still retained
+  archiveLogs: true 
+  entrypoint: k6-test
+  templates:
+  - name: k6-test
+    steps:
+    - - name: k6-run
+        template: k6
+  
+  #k6 test template
+  - name: k6
+    container:
+      workingDir: /repo/tests/
+      image: grafana/k6:0.49.0
+      env: 
+      - name: K6_WEB_DASHBOARD
+        value: "true"
+      - name: K6_WEB_DASHBOARD_EXPORT
+        value: /tmp/{{workflow.parameters.k6reportname}}
+      command: [k6]
+      args: 
+      - run 
+      - "{{workflow.parameters.k6testtype}}" 
+    inputs:
+      artifacts:
+      - name: test-source
+        path: /repo
+        git:
+          repo: https://github.com/FraNemo/testkube.git
+    outputs:
+      artifacts:
+      - name: test-report
+        path: /tmp/{{workflow.parameters.k6reportname}}

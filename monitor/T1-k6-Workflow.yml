@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: k6smoketest-
+  labels:
+    workflows.argoproj.io/archive-strategy: "false"
+  annotations:
+    workflows.argoproj.io/description: |
+      This is a K6 Smoke Test
+spec:
+  archiveLogs: true
+  entrypoint: k6-test
+  templates:
+  - name: k6-test
+    steps:
+    - - name: k6-run
+        template: k6
+
+  - name: k6
+    container:
+      workingDir: /repo/tests/
+      image: grafana/k6:0.49.0
+      env: 
+      - name: K6_WEB_DASHBOARD
+        value: "true"
+      - name: K6_WEB_DASHBOARD_EXPORT
+        value: /tmp/k6-smoke-report.html
+      command: [k6]
+      args: # args passed to the container
+      - run 
+      - --out
+      - influxdb=http://influxdb.default.svc.cluster.local:8086/k6db
+      - T1-SmokeTest.js  
+    inputs:
+      artifacts:
+      - name: test-source
+        path: /repo
+        git:
+          repo: https://github.com/FraNemo/testkube.git
+    outputs:
+      artifacts:
+      - name: test-report
+        path: /tmp/k6-smoke-report.html

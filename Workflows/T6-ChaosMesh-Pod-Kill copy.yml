@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: chaosmesh-k6-pod-kill-
+spec:
+  entrypoint: run-parallel
+  arguments:
+    #global parameters for the workflow
+    parameters:
+      - name: k6testtype
+        value: "T6-SimTest.js" 
+      - name: k6reportname
+        value: "k6-sim-report.html" 
+  templates:
+    - name: run-parallel
+      dag:
+        #parallel tasks 
+        tasks:
+          - name: run-pod-kill-experiment
+            templateRef:
+              name: pod-kill-template
+              template: chaos-execution  
+
+          - name: run-k6-test
+            templateRef:
+              name: k6test-template
+              template: k6-test 

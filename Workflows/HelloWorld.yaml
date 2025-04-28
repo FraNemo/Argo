@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: hello-world-
+  labels:
+    workflows.argoproj.io/archive-strategy: "false"
+  annotations:
+    workflows.argoproj.io/description: |
+      This is a simple hello world example.
+      You can also run it in Python: https://couler-proj.github.io/couler/examples/#hello-world
+spec:
+  ttlStrategy:
+    secondsAfterCompletion: 10 # Time to live after workflow is completed, replaces ttlSecondsAfterFinished
+    secondsAfterSuccess: 5     # Time to live after workflow is successful
+    secondsAfterFailure: 5     # Time to live after workflow failed
+  entrypoint: whalesay
+  templates:
+  - name: whalesay
+    container:
+      image: docker/whalesay:latest
+      command: [/bin/sh, -c]
+      args: [cowsay hello world > /tmp/hello_world.txt]
+    outputs:
+      artifacts:
+      - name: hello-world
+        path: /tmp/hello_world.txt

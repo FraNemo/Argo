@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: zaptest-
+  labels:
+    workflows.argoproj.io/archive-strategy: "false"
+  annotations:
+    workflows.argoproj.io/description: |
+      This is a Zap Scan Test
+spec: 
+  podGC: 
+    strategy: OnWorkflowCompletion
+  ttlStrategy:
+    secondsAfterCompletion: 0 # Time to live after workflow is completed, replaces ttlSecondsAfterFinished
+    secondsAfterSuccess: 0     # Time to live after workflow is successful
+    secondsAfterFailure: 600    # Time to live after workflow failed
+  archiveLogs: true
+  entrypoint: zap-test
+  volumes: 
+    - name: zap-wrk
+      emptyDir: {}
+  templates:
+  - name: zap-test
+    steps:
+    - - name: scan-run
+        template: zap
+
+  - name: zap
+    container:
+      workingDir: /zap/wrk/
+      image: zaproxy/zap-stable:latest
+      volumeMounts:
+      - name: zap-wrk
+        mountPath: /zap/wrk/
+      command: ["/bin/sh", "-c"]
+      args: # args passed to the container
+      - "zap-full-scan.py -t http://frontend.default.svc.cluster.local:80 -m 5 -d -D 5 -I -l PASS -T 60 -r zap-report.html" 
+    outputs:
+      artifacts:
+      - name: Zap-test-report
+        path: /zap/wrk/zap-report.html

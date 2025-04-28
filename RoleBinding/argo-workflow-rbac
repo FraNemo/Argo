@@ -1,0 +1,26 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: argo-workflow-role
+  namespace: argo
+rules:
+- apiGroups: [""]
+  resources: ["pods", "pods/log", "services", "configmaps", "secrets", "events"]
+  verbs: ["get", "watch", "list", "create", "delete"]
+- apiGroups: ["argoproj.io"]
+  resources: ["workflows"]
+  verbs: ["get", "watch", "list", "create", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: argo-workflow-rolebinding
+  namespace: argo
+subjects:
+- kind: ServiceAccount
+  name: argo-workflow-sa
+  namespace: argo
+roleRef:
+  kind: Role
+  name: argo-workflow-role
+  apiGroup: rbac.authorization.k8s.io
